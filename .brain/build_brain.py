@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Build the Research Brain site from the Obsidian vault.
 
-    python3 scripts/build_brain.py
+    python3 .brain/build_brain.py
 
-Reads vault/ and data/, writes public/index.html. Vercel runs this on every
+The repo root is the Obsidian vault. Reads the notes and .brain/, writes public/index.html. Vercel runs this on every
 push to main, so editing a note and pushing is all it takes to update the site.
 """
 import datetime
@@ -14,9 +14,9 @@ import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-VAULT = ROOT / "vault"
-DATA_DIR = ROOT / "data"
-TEMPLATE = ROOT / "site" / "template.html"
+VAULT = ROOT
+DATA_DIR = ROOT / ".brain"
+TEMPLATE = DATA_DIR / "template.html"
 OUT_DIR = ROOT / "public"
 
 REPO = "{}/{}".format(
@@ -25,7 +25,7 @@ REPO = "{}/{}".format(
 )
 BRANCH = os.environ.get("VERCEL_GIT_COMMIT_REF", "main")
 
-SKIP_DIRS = {".obsidian", "Templates", ".trash"}
+SKIP_DIRS = {".obsidian", "Templates", ".trash", ".brain", ".github", ".claude", ".git", ".git.nosync", "public", "node_modules"}
 
 # Vault folder -> (branch label, the part of the paper it feeds, colour)
 SECTIONS = {
@@ -78,7 +78,7 @@ def git_dates(rel):
     """(first, last) commit dates for a vault file, or (None, None) without git history."""
     try:
         out = subprocess.run(
-            ["git", "log", "--follow", "--format=%as", "--", str(Path("vault") / rel)],
+            ["git", "log", "--follow", "--format=%as", "--", str(rel)],
             cwd=ROOT, capture_output=True, text=True, timeout=10,
         ).stdout.split()
         return (out[-1], out[0]) if out else (None, None)

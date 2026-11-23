@@ -398,8 +398,8 @@ function select(n){
     const kids = leaves.filter(x => x.section === n.section).sort((a,b) => (a.sub||"").localeCompare(b.sub||"") || a.title.localeCompare(b.title));
     pane.innerHTML = `<h1>${esc(S[n.section].label)}</h1><div class="meta"><span class="pill">${esc(S[n.section].role)}</span><span class="pill">${kids.length} notes</span></div>` +
       `<div class="actions">${n.section === "Deliverables"
-        ? `<a class="btn primary" href="${GH("/edit/" + DATA.branch + "/data/deliverables.json")}" target="_blank" rel="noopener">+ Add a deliverable</a>`
-        : `<a class="btn primary" href="${GH("/new/" + DATA.branch + "/vault/" + encPath(n.section))}" target="_blank" rel="noopener">+ New note in this branch</a>`}</div>` +
+        ? `<a class="btn primary" href="${GH("/edit/" + DATA.branch + "/.brain/deliverables.json")}" target="_blank" rel="noopener">+ Add a deliverable</a>`
+        : `<a class="btn primary" href="${GH("/new/" + DATA.branch + "/" + encPath(n.section))}" target="_blank" rel="noopener">+ New note in this branch</a>`}</div>` +
       (kids.length ? "<ul>" + kids.map(k => `<li><span class="wl" data-id="${esc(k.id)}">${esc(k.title)}</span>${k.status?` <span class="pill st-${esc(k.status)}">${esc(k.status)}</span>`:""}</li>`).join("") + "</ul>" : `<p class="empty">Nothing here yet. Add notes to <code>${esc(n.section)}</code> and rebuild: this branch will grow.</p>`);
   } else if (n.kind === "root"){
     pane.innerHTML = `<h1>${esc(n.title)}</h1><p>The centre of the brain. Each coloured branch is a folder of the Obsidian vault and feeds one part of the paper. Node size grows with links; branch hubs grow as notes are added.</p>`;
@@ -407,7 +407,7 @@ function select(n){
     const meta = [n.section && S[n.section] ? S[n.section].label : null, n.sub, n.type, n.date ? "added " + n.date : null].filter(Boolean)
       .map(m => `<span class="pill">${esc(m)}</span>`).join("") + (n.status ? `<span class="pill st-${esc(n.status)}">${esc(n.status)}</span>` : "");
     const backs = [...new Set(n.back)].filter(b => b !== n);
-    const edit = n.kind === "note" ? `<div class="actions"><a class="btn" href="${GH("/edit/" + DATA.branch + "/vault/" + encPath(n.path))}" target="_blank" rel="noopener">Edit on GitHub</a><a class="btn" href="${GH("/commits/" + DATA.branch + "/vault/" + encPath(n.path))}" target="_blank" rel="noopener">History</a></div>` : "";
+    const edit = n.kind === "note" ? `<div class="actions"><a class="btn" href="${GH("/edit/" + DATA.branch + "/" + encPath(n.path))}" target="_blank" rel="noopener">Edit on GitHub</a><a class="btn" href="${GH("/commits/" + DATA.branch + "/" + encPath(n.path))}" target="_blank" rel="noopener">History</a></div>` : "";
     pane.innerHTML = `<h1>${esc(n.title)}</h1><div class="meta">${meta}</div>${edit}${md(n.body || "")}` +
       (backs.length ? `<div class="backs">Linked with: ${backs.map(b => `<span class="wl" data-id="${esc(b.id)}">${esc(b.title)}</span>`).join(" · ")}</div>` : "");
   }

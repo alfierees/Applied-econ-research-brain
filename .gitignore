@@ -1,7 +1,7 @@
 public/
 .DS_Store
-vault/.obsidian/workspace*.json
-vault/.obsidian/plugins/obsidian-git/data.json
-vault/.trash/
+.obsidian/workspace*.json
+.obsidian/plugins/obsidian-git/data.json
+.trash/
 __pycache__/
 .vercel
