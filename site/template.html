@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Research Brain: AI and the US Labour Market</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0e1116; --bg2:#151a22; --line:#252c38; --ink:#e6e9ef; --mute:#8b95a5; --soft:#5d6778;
+    --accent:#f2b84b;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:14px/1.5 Inter,system-ui,sans-serif}
+  a{color:#9cc3ff}
+  .app{display:grid;grid-template-rows:auto 1fr;height:100vh}
+  header{display:flex;align-items:center;gap:24px;padding:14px 20px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  header h1{font:600 20px/1.2 "Source Serif 4",Georgia,serif;margin:0;letter-spacing:.2px}
+  header .sub{color:var(--mute);font-size:12.5px}
+  .stats{display:flex;gap:18px;margin-left:auto}
+  .stat b{display:block;font-size:18px;font-weight:600;font-variant-numeric:tabular-nums}
+  .stat span{color:var(--mute);font-size:11.5px;text-transform:uppercase;letter-spacing:.6px}
+  main{display:grid;grid-template-columns:1fr 400px;min-height:0}
+  .stage{position:relative;min-height:0;overflow:hidden}
+  canvas{display:block;width:100%;height:100%;cursor:grab}
+  canvas.dragging{cursor:grabbing}
+  .search{position:absolute;top:14px;left:14px;display:flex;gap:8px;align-items:center}
+  .search input{background:var(--bg2);border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:7px 10px;width:220px;font:inherit}
+  .legend{position:absolute;top:56px;left:14px;display:flex;flex-direction:column;gap:3px}
+  .chip{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--mute);cursor:pointer;user-select:none;padding:2px 6px;border-radius:6px}
+  .chip:hover{background:var(--bg2);color:var(--ink)}
+  .chip.off{opacity:.35}
+  .chip i{width:9px;height:9px;border-radius:50%;display:inline-block}
+  .tip{position:absolute;pointer-events:none;background:#000c;border:1px solid var(--line);padding:6px 9px;border-radius:7px;font-size:12px;max-width:280px;display:none}
+  .tip small{color:var(--mute);display:block}
+  .scrub{position:absolute;left:14px;right:14px;bottom:14px;background:#151a22ee;border:1px solid var(--line);border-radius:12px;padding:10px 14px;display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center}
+  .scrub button{background:var(--accent);color:#1a1405;border:0;border-radius:8px;padding:7px 12px;font:600 13px Inter,sans-serif;cursor:pointer;min-width:92px}
+  .scrub input[type=range]{width:100%;accent-color:var(--accent)}
+  .scrub .when{font-variant-numeric:tabular-nums;color:var(--mute);font-size:12.5px;min-width:150px;text-align:right}
+  .ticks{position:relative;height:10px;margin-top:2px}
+  .ticks span{position:absolute;top:0;width:2px;height:8px;border-radius:1px;transform:translateX(-1px)}
+  aside{border-left:1px solid var(--line);display:flex;flex-direction:column;min-height:0;background:var(--bg2)}
+  .tabs{display:flex;border-bottom:1px solid var(--line)}
+  .tabs button{flex:1;background:none;border:0;color:var(--mute);padding:12px 8px;font:500 13px Inter,sans-serif;cursor:pointer;border-bottom:2px solid transparent}
+  .tabs button.on{color:var(--ink);border-bottom-color:var(--accent)}
+  .pane{overflow:auto;padding:16px 18px;flex:1;display:none}
+  .pane.on{display:block}
+  .branch{padding:10px 0;border-bottom:1px solid var(--line);cursor:pointer}
+  .branch:last-child{border-bottom:0}
+  .branch .top{display:flex;align-items:center;gap:8px}
+  .branch .top i{width:10px;height:10px;border-radius:50%}
+  .branch .top b{font-weight:600}
+  .branch .top em{margin-left:auto;font-style:normal;color:var(--mute);font-variant-numeric:tabular-nums}
+  .branch .role{color:var(--mute);font-size:12px;margin:2px 0 6px 18px}
+  .bar{height:5px;background:#222935;border-radius:3px;margin-left:18px;display:flex;overflow:hidden}
+  .bar span{height:100%}
+  .keyrow{display:flex;gap:12px;flex-wrap:wrap;color:var(--mute);font-size:11.5px;margin:4px 0 12px}
+  .keyrow i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:4px;vertical-align:-1px}
+  .month{font:600 12px Inter;color:var(--mute);text-transform:uppercase;letter-spacing:.7px;margin:18px 0 6px}
+  .month:first-child{margin-top:0}
+  .ev{display:grid;grid-template-columns:52px 1fr;gap:10px;padding:7px 0;border-left:2px solid var(--line);padding-left:12px;margin-left:4px;position:relative;cursor:pointer}
+  .ev:before{content:"";position:absolute;left:-6px;top:12px;width:10px;height:10px;border-radius:50%;background:var(--c,#888);border:2px solid var(--bg2)}
+  .ev .d{color:var(--mute);font-size:12px;font-variant-numeric:tabular-nums}
+  .ev .k{font-size:10.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--c,#888);font-weight:600}
+  .ev .t{font-size:13px}
+  .ev .w{font-size:12px;color:var(--mute)}
+  .ev:hover .t{color:#fff}
+  .note h1,.note h2,.note h3{font-family:"Source Serif 4",Georgia,serif;font-weight:600;line-height:1.25}
+  .note h1{font-size:21px;margin:4px 0 10px}.note h2{font-size:16.5px;margin:18px 0 6px}.note h3{font-size:14.5px;margin:14px 0 4px}
+  .note p{margin:6px 0}
+  .note table{border-collapse:collapse;width:100%;font-size:12.5px;margin:8px 0}
+  .note th,.note td{border:1px solid var(--line);padding:5px 7px;text-align:left;vertical-align:top}
+  .note th{background:#1b212b}
+  .note code{background:#1f2633;padding:1px 5px;border-radius:4px;font-size:12px}
+  .note pre{background:#0f131a;border:1px solid var(--line);padding:9px;border-radius:7px;overflow:auto;font-size:12px}
+  .note blockquote{margin:8px 0;padding:8px 12px;border-left:3px solid var(--accent);background:#1b2029;border-radius:0 6px 6px 0}
+  .note ul{padding-left:20px;margin:6px 0}
+  .note li.task{list-style:none;margin-left:-18px}
+  .note .wl{color:#9cc3ff;cursor:pointer;text-decoration:underline dotted}
+  .note .wl.dead{color:var(--mute);cursor:default;text-decoration:none}
+  .meta{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+  .pill{font-size:11px;padding:2px 8px;border-radius:999px;background:#222935;color:var(--mute)}
+  .pill.st-done{background:#1f3a26;color:#8fe39e}.pill.st-in-progress{background:#3a311b;color:#f2c76b}
+  .pill.st-not-started{background:#2a2f38}.pill.st-out-of-scope{background:#3a2020;color:#f19a9a}
+  .backs{margin-top:16px;border-top:1px solid var(--line);padding-top:10px;font-size:12.5px;color:var(--mute)}
+  .backs span{display:inline-block;margin:3px 6px 0 0}
+  .empty{color:var(--mute)}
+  .actions{display:flex;gap:8px;flex-wrap:wrap;margin:2px 0 12px}
+  .btn{display:inline-block;font:500 12px Inter,sans-serif;padding:5px 10px;border-radius:7px;border:1px solid var(--line);background:#1b212b;color:var(--ink);text-decoration:none}
+  .btn:hover{border-color:var(--accent);color:#fff}
+  .btn.primary{background:var(--accent);color:#1a1405;border-color:var(--accent)}
+  @media (max-width:900px){
+    main{grid-template-columns:1fr;grid-template-rows:62vh auto}
+    aside{border-left:0;border-top:1px solid var(--line);min-height:50vh}
+    .stats{margin-left:0}
+    .legend{display:none}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div>
+      <h1>Research Brain</h1>
+      <div class="sub">Did generative AI reduce employment in AI-exposed US occupations? · Alfie Rees &amp; Lorenzo Del Monte · Applied Economics, Reichman University</div>
+    </div>
+    <div class="stats" id="stats"></div>
+    <a class="btn" id="contrib" target="_blank" rel="noopener">How to contribute</a>
+  </header>
+  <main>
+    <div class="stage" id="stage">
+      <canvas id="cv"></canvas>
+      <div class="search"><input id="q" placeholder="Search notes…" autocomplete="off"></div>
+      <div class="legend" id="legend"></div>
+      <div class="tip" id="tip"></div>
+      <div class="scrub">
+        <button id="play">▶ Replay</button>
+        <div>
+          <input type="range" id="t" min="0" max="100" value="100">
+          <div class="ticks" id="ticks"></div>
+        </div>
+        <div class="when" id="when"></div>
+      </div>
+    </div>
+    <aside>
+      <div class="tabs">
+        <button data-p="branches" class="on">Branches</button>
+        <button data-p="roadmap">Roadmap</button>
+        <button data-p="note">Note</button>
+      </div>
+      <div class="pane on" id="p-branches"></div>
+      <div class="pane" id="p-roadmap"></div>
+      <div class="pane note" id="p-note"><p class="empty">Click any node in the brain to read the note here.</p></div>
+    </aside>
+  </main>
+</div>
+<script>
+const DATA = /*__DATA__*/null;
+const S = DATA.sections;
+const STATUS_COL = {"done":"#7ee081","in-progress":"#f2b84b","not-started":"#5d6778","out-of-scope":"#e57373"};
+const GH = p => "https://github.com/" + DATA.repo + p;
+const encPath = s => s.split("/").map(encodeURIComponent).join("/");
+const EV_COL = {Decision:"#f2b84b",Meeting:"#6fa8ff",Deliverable:"#ffd166",Question:"#f78fb3",Finding:"#7ee081"};
+
+// ---------- model ----------
+const nodes = DATA.nodes.map(n => ({...n}));
+const byId = Object.fromEntries(nodes.map(n => [n.id, n]));
+const links = DATA.links.map(l => ({...l, s: byId[l.source], t: byId[l.target]})).filter(l => l.s && l.t);
+nodes.forEach(n => { n.nb = new Set(); n.back = []; });
+links.forEach(l => { l.s.nb.add(l.t); l.t.nb.add(l.s); if (l.kind === "wiki") { l.t.back.push(l.s); l.s.back.push(l.t); } });
+const leaves = nodes.filter(n => n.kind === "note" || n.kind === "file");
+const hubs = nodes.filter(n => n.kind === "hub");
+const colourOf = n => n.kind === "root" ? "#ffffff" : (n.section && S[n.section] ? S[n.section].colour : "#cfd8dc");
+
+// dates for growth replay
+const dates = [...new Set(leaves.map(n => n.date).concat(DATA.events.map(e => e.date)).filter(Boolean))].sort();
+const d0 = new Date(dates[0] || DATA.built.slice(0,10)), d1 = new Date(DATA.built.slice(0,10));
+const span = Math.max(1, (d1 - d0) / 864e5);
+let tCut = d1;
+
+// initial layout: hubs on a ring, leaves around their hub
+const W0 = 1000;
+hubs.forEach((h, i) => {
+  const a = -Math.PI/2 + i * 2*Math.PI/hubs.length;
+  h.ang = a; h.x = Math.cos(a)*260; h.y = Math.sin(a)*260;
+});
+const root = byId.root; root.x = 0; root.y = 0; root.fx = 0; root.fy = 0;
+leaves.forEach(n => {
+  const h = byId["hub:" + n.section] || root;
+  const a = Math.random()*Math.PI*2;
+  n.x = (h.x||0) + Math.cos(a)*70; n.y = (h.y||0) + Math.sin(a)*70;
+});
+nodes.forEach(n => { n.vx = 0; n.vy = 0; if (n.x == null) { n.x = Math.random()*50; n.y = Math.random()*50; } });
+
+const hidden = new Set();
+function visible(n){
+  if (n.kind === "root") return true;
+  if (n.kind === "hub") return !hidden.has(n.section);
+  if (hidden.has(n.section)) return false;
+  return !n.date || new Date(n.date) <= tCut;
+}
+function hubCount(h){ return leaves.filter(n => n.section === h.section && visible(n)).length; }
+function radius(n){
+  if (n.kind === "root") return 16;
+  if (n.kind === "hub") return 7 + Math.sqrt(hubCount(n))*3.2;
+  return 3.5 + Math.min(6, n.nb.size*0.7);
+}
+
+// ---------- physics ----------
+let alpha = 1;
+function tick(){
+  const vis = nodes.filter(visible);
+  for (let i=0;i<vis.length;i++){
+    const a = vis[i];
+    for (let j=i+1;j<vis.length;j++){
+      const b = vis[j];
+      let dx = b.x-a.x, dy = b.y-a.y, d2 = dx*dx+dy*dy+0.01;
+      if (d2 > 160000) continue;
+      const f = (a.kind==="hub"||b.kind==="hub" ? 1800 : 900) / d2 * alpha;
+      const d = Math.sqrt(d2); dx/=d; dy/=d;
+      a.vx -= dx*f; a.vy -= dy*f; b.vx += dx*f; b.vy += dy*f;
+    }
+  }
+  links.forEach(l => {
+    if (!visible(l.s) || !visible(l.t)) return;
+    const L = l.kind==="wiki" ? 150 : (l.s.kind==="root" ? 250 : 70);
+    const k = l.kind==="wiki" ? 0.0015 : 0.06;
+    let dx = l.t.x-l.s.x, dy = l.t.y-l.s.y; const d = Math.sqrt(dx*dx+dy*dy)||1;
+    const f = (d-L)*k*alpha; dx/=d; dy/=d;
+    l.s.vx += dx*f; l.s.vy += dy*f; l.t.vx -= dx*f; l.t.vy -= dy*f;
+  });
+  hubs.forEach(h => { // keep branches spread around the centre
+    h.vx += (Math.cos(h.ang)*270 - h.x)*0.01*alpha; h.vy += (Math.sin(h.ang)*270 - h.y)*0.01*alpha;
+  });
+  vis.forEach(n => {
+    if (n.fx != null){ n.x = n.fx; n.y = n.fy; n.vx = n.vy = 0; return; }
+    n.vx *= 0.82; n.vy *= 0.82; n.x += n.vx; n.y += n.vy;
+  });
+  alpha = Math.max(0.03, alpha*0.995);
+}
+
+// ---------- drawing ----------
+const cv = document.getElementById("cv"), ctx = cv.getContext("2d");
+let view = {x:0,y:0,k:1}, W=0, H=0, dpr = window.devicePixelRatio||1;
+function resize(){
+  const r = cv.getBoundingClientRect(); W = r.width; H = r.height;
+  cv.width = W*dpr; cv.height = H*dpr;
+  if (!view.init){ view.k = Math.min(W,H)/820; view.x = W/2 + (W>700?60:0); view.y = H/2 - 45; view.init = true; }
+}
+window.addEventListener("resize", resize);
+let hover = null, selected = null, query = "";
+const matches = n => !query || (n.title + " " + (n.body||"")).toLowerCase().includes(query);
+
+function draw(){
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,W,H);
+  ctx.save(); ctx.translate(view.x, view.y); ctx.scale(view.k, view.k);
+  const focus = hover || selected;
+  const lit = n => !focus || n === focus || focus.nb.has(n);
+  // links
+  links.forEach(l => {
+    if (!visible(l.s) || !visible(l.t)) return;
+    const on = focus && (l.s===focus || l.t===focus);
+    ctx.beginPath();
+    if (l.kind === "wiki"){
+      const mx = (l.s.x+l.t.x)/2, my = (l.s.y+l.t.y)/2;
+      ctx.moveTo(l.s.x,l.s.y); ctx.quadraticCurveTo(mx*0.85, my*0.85, l.t.x, l.t.y);
+      ctx.strokeStyle = on ? "rgba(255,255,255,.75)" : (focus ? "rgba(255,255,255,.03)" : "rgba(255,255,255,.08)");
+      ctx.lineWidth = on ? 1.3 : 0.7;
+    } else {
+      ctx.moveTo(l.s.x,l.s.y); ctx.lineTo(l.t.x,l.t.y);
+      const c = colourOf(l.t.kind==="hub" ? l.t : l.s);
+      ctx.strokeStyle = c + (on ? "ee" : focus ? "18" : (l.s.kind==="root" ? "88" : "55"));
+      ctx.lineWidth = l.s.kind==="root" ? 2.4 : 1.1;
+    }
+    ctx.stroke();
+  });
+  // nodes
+  nodes.forEach(n => {
+    if (!visible(n)) return;
+    const r = radius(n), c = colourOf(n);
+    const dim = (focus && !lit(n)) || (query && n.kind!=="hub" && n.kind!=="root" && !matches(n));
+    ctx.globalAlpha = dim ? 0.15 : (n.status === "out-of-scope" ? 0.4 : 1);
+    if (n.kind !== "note" && n.kind !== "file" || n === selected){
+      ctx.beginPath(); ctx.arc(n.x,n.y,r*2.2,0,7);
+      const g = ctx.createRadialGradient(n.x,n.y,r*0.5,n.x,n.y,r*2.2);
+      g.addColorStop(0, c+"55"); g.addColorStop(1, c+"00"); ctx.fillStyle = g; ctx.fill();
+    }
+    ctx.beginPath(); ctx.arc(n.x,n.y,r,0,7); ctx.fillStyle = c; ctx.fill();
+    if (n.kind === "file"){ ctx.fillStyle = "#0e1116"; ctx.fillRect(n.x-r*0.45,n.y-r*0.45,r*0.9,r*0.9); }
+    if (n.status && STATUS_COL[n.status]){
+      ctx.beginPath(); ctx.arc(n.x,n.y,r+2.2,0,7); ctx.strokeStyle = STATUS_COL[n.status]; ctx.lineWidth = 1.4; ctx.stroke();
+    }
+    if (n === selected){ ctx.beginPath(); ctx.arc(n.x,n.y,r+5,0,7); ctx.strokeStyle="#fff"; ctx.lineWidth=1.5; ctx.stroke(); }
+    // labels
+    const showLabel = n.kind !== "note" && n.kind !== "file" || view.k > 1.35 || (focus && lit(n)) || (query && matches(n));
+    if (showLabel){
+      ctx.font = (n.kind==="hub"||n.kind==="root" ? "600 " : "") + (n.kind==="root"?15:n.kind==="hub"?13:11)/Math.max(0.8,Math.min(1.4,view.k)) + "px Inter, sans-serif";
+      ctx.fillStyle = n.kind==="hub"||n.kind==="root" ? "#fff" : "#c9d1dc";
+      ctx.textAlign = "center"; ctx.textBaseline = "top";
+      let label = n.title; if (label.length > 34) label = label.slice(0,32)+"…";
+      if (n.kind==="hub") label += "  " + hubCount(n);
+      ctx.fillText(label, n.x, n.y + r + 4);
+    }
+    ctx.globalAlpha = 1;
+  });
+  ctx.restore();
+}
+function loop(){ tick(); draw(); requestAnimationFrame(loop); }
+
+// ---------- interaction ----------
+const tip = document.getElementById("tip");
+function toWorld(px,py){ return {x:(px-view.x)/view.k, y:(py-view.y)/view.k}; }
+function pick(px,py){
+  const p = toWorld(px,py); let best=null, bd=1e9;
+  nodes.forEach(n => { if (!visible(n)) return; const d = Math.hypot(n.x-p.x,n.y-p.y); const r = radius(n)+4/view.k; if (d<r && d<bd){bd=d;best=n;} });
+  return best;
+}
+let drag = null, pan = null, moved = false;
+cv.addEventListener("pointerdown", e => {
+  const r = cv.getBoundingClientRect(), px = e.clientX-r.left, py = e.clientY-r.top;
+  const n = pick(px,py); moved = false; cv.setPointerCapture(e.pointerId);
+  if (n && n.kind !== "root"){ drag = n; n.fx = n.x; n.fy = n.y; alpha = Math.max(alpha,0.4); }
+  else pan = {x:px-view.x, y:py-view.y};
+  cv.classList.add("dragging");
+});
+cv.addEventListener("pointermove", e => {
+  const r = cv.getBoundingClientRect(), px = e.clientX-r.left, py = e.clientY-r.top;
+  if (drag){ const p = toWorld(px,py); drag.fx = p.x; drag.fy = p.y; moved = true; return; }
+  if (pan){ view.x = px-pan.x; view.y = py-pan.y; moved = true; return; }
+  const n = pick(px,py);
+  if (n !== hover){ hover = n; }
+  if (n){
+    tip.style.display = "block"; tip.style.left = (px+14)+"px"; tip.style.top = (py+10)+"px";
+    const sec = n.section && S[n.section] ? S[n.section].label : "";
+    tip.innerHTML = `<b>${esc(n.title)}</b><small>${n.kind==="hub" ? esc(S[n.section].role) + " · " + hubCount(n) + " notes" : esc(sec) + (n.status ? " · " + esc(n.status) : "") + (n.date ? " · " + n.date : "")}</small>`;
+  } else tip.style.display = "none";
+});
+cv.addEventListener("pointerup", e => {
+  const r = cv.getBoundingClientRect();
+  if (!moved){ const n = pick(e.clientX-r.left, e.clientY-r.top); if (n) select(n); else { selected = null; } }
+  if (drag && drag.kind !== "root"){ drag.fx = drag.fy = null; }
+  drag = null; pan = null; cv.classList.remove("dragging");
+});
+cv.addEventListener("pointerleave", () => { hover = null; tip.style.display = "none"; });
+cv.addEventListener("wheel", e => {
+  e.preventDefault();
+  const r = cv.getBoundingClientRect(), px = e.clientX-r.left, py = e.clientY-r.top;
+  const k = Math.min(4, Math.max(0.25, view.k * Math.exp(-e.deltaY*0.0015)));
+  view.x = px - (px-view.x)*k/view.k; view.y = py - (py-view.y)*k/view.k; view.k = k;
+}, {passive:false});
+document.getElementById("q").addEventListener("input", e => { query = e.target.value.trim().toLowerCase(); });
+
+// ---------- panels ----------
+function esc(s){ return String(s??"").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+const nameToId = {}; nodes.forEach(n => { if (n.kind==="note") nameToId[n.title.toLowerCase()] = n.id; });
+function inline(s){
+  s = esc(s);
+  s = s.replace(/`([^`]+)`/g, "<code>$1</code>");
+  s = s.replace(/\[\[([^\]|#]+)(#[^\]|]*)?(\|([^\]]+))?\]\]/g, (m,t,h,_,alias) => {
+    const id = nameToId[t.replace(/\.excalidraw$/,"").trim().toLowerCase()];
+    return `<span class="wl${id?"":" dead"}" ${id?`data-id="${esc(id)}"`:""}>${alias||t}</span>`;
+  });
+  s = s.replace(/\[([^\]]+)\]\((https?:[^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+  s = s.replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>").replace(/(^|[^*])\*([^*]+)\*/g, "$1<i>$2</i>");
+  s = s.replace(/~~([^~]+)~~/g, "<s>$1</s>").replace(/(^|\s)#([a-z][\w-]*)/gi, '$1<span class="pill">#$2</span>');
+  return s;
+}
+function md(src){
+  const lines = src.split("\n"), out = []; let i = 0;
+  while (i < lines.length){
+    let l = lines[i];
+    if (/^```/.test(l)){
+      const lang = l.slice(3).trim(); const buf = []; i++;
+      while (i < lines.length && !/^```/.test(lines[i])) buf.push(lines[i++]);
+      i++;
+      out.push(lang==="dataview" ? `<p class="empty">(Live Dataview table: open in Obsidian to see it.)</p>` : `<pre>${esc(buf.join("\n"))}</pre>`);
+      continue;
+    }
+    if (/^\|/.test(l)){
+      const rows = []; while (i < lines.length && /^\|/.test(lines[i])) rows.push(lines[i++]);
+      const cells = r => r.trim().replace(/^\||\|$/g,"").split("|").map(c => c.trim());
+      let h = `<table><tr>${cells(rows[0]).map(c=>`<th>${inline(c)}</th>`).join("")}</tr>`;
+      rows.slice(1).filter(r => !/^\|[\s:\-|]+\|$/.test(r.trim())).forEach(r => h += `<tr>${cells(r).map(c=>`<td>${inline(c)}</td>`).join("")}</tr>`);
+      out.push(h + "</table>"); continue;
+    }
+    if (/^>/.test(l)){
+      const buf = []; while (i < lines.length && /^>/.test(lines[i])) buf.push(lines[i++].replace(/^>\s?/,""));
+      buf[0] = buf[0].replace(/^\[!(\w+)\]\s*/, (m,t) => `<b>${t[0].toUpperCase()+t.slice(1)}:</b> `);
+      out.push(`<blockquote>${buf.map(b => b.startsWith("<b>") ? b.replace(/^(<b>[^<]*<\/b> )(.*)$/, (m,a,c)=>a+inline(c)) : inline(b)).join("<br>")}</blockquote>`); continue;
+    }
+    if (/^\s*([-*]|\d+\.)\s/.test(l)){
+      const buf = []; while (i < lines.length && /^\s*([-*]|\d+\.)\s/.test(lines[i])) buf.push(lines[i++]);
+      out.push("<ul>" + buf.map(b => {
+        const t = b.replace(/^\s*([-*]|\d+\.)\s/,"");
+        const m = t.match(/^\[( |x)\]\s(.*)$/);
+        return m ? `<li class="task">${m[1]==="x"?"☑":"☐"} ${inline(m[2])}</li>` : `<li>${inline(t)}</li>`;
+      }).join("") + "</ul>"); continue;
+    }
+    const hm = l.match(/^(#{1,3})\s+(.*)$/);
+    if (hm){ out.push(`<h${hm[1].length}>${inline(hm[2])}</h${hm[1].length}>`); i++; continue; }
+    if (/^!\[\[/.test(l)){ out.push(`<p class="empty">(Embedded drawing: open in Obsidian.)</p>`); i++; continue; }
+    if (l.trim()){ out.push(`<p>${inline(l)}</p>`); }
+    i++;
+  }
+  return out.join("");
+}
+function showPane(p){
+  document.querySelectorAll(".tabs button").forEach(b => b.classList.toggle("on", b.dataset.p===p));
+  document.querySelectorAll(".pane").forEach(x => x.classList.toggle("on", x.id==="p-"+p));
+}
+document.querySelectorAll(".tabs button").forEach(b => b.onclick = () => showPane(b.dataset.p));
+function select(n){
+  selected = n;
+  const pane = document.getElementById("p-note");
+  if (n.kind === "hub"){
+    const kids = leaves.filter(x => x.section === n.section).sort((a,b) => (a.sub||"").localeCompare(b.sub||"") || a.title.localeCompare(b.title));
+    pane.innerHTML = `<h1>${esc(S[n.section].label)}</h1><div class="meta"><span class="pill">${esc(S[n.section].role)}</span><span class="pill">${kids.length} notes</span></div>` +
+      `<div class="actions">${n.section === "Deliverables"
+        ? `<a class="btn primary" href="${GH("/edit/" + DATA.branch + "/data/deliverables.json")}" target="_blank" rel="noopener">+ Add a deliverable</a>`
+        : `<a class="btn primary" href="${GH("/new/" + DATA.branch + "/vault/" + encPath(n.section))}" target="_blank" rel="noopener">+ New note in this branch</a>`}</div>` +
+      (kids.length ? "<ul>" + kids.map(k => `<li><span class="wl" data-id="${esc(k.id)}">${esc(k.title)}</span>${k.status?` <span class="pill st-${esc(k.status)}">${esc(k.status)}</span>`:""}</li>`).join("") + "</ul>" : `<p class="empty">Nothing here yet. Add notes to <code>${esc(n.section)}</code> and rebuild: this branch will grow.</p>`);
+  } else if (n.kind === "root"){
+    pane.innerHTML = `<h1>${esc(n.title)}</h1><p>The centre of the brain. Each coloured branch is a folder of the Obsidian vault and feeds one part of the paper. Node size grows with links; branch hubs grow as notes are added.</p>`;
+  } else {
+    const meta = [n.section && S[n.section] ? S[n.section].label : null, n.sub, n.type, n.date ? "added " + n.date : null].filter(Boolean)
+      .map(m => `<span class="pill">${esc(m)}</span>`).join("") + (n.status ? `<span class="pill st-${esc(n.status)}">${esc(n.status)}</span>` : "");
+    const backs = [...new Set(n.back)].filter(b => b !== n);
+    const edit = n.kind === "note" ? `<div class="actions"><a class="btn" href="${GH("/edit/" + DATA.branch + "/vault/" + encPath(n.path))}" target="_blank" rel="noopener">Edit on GitHub</a><a class="btn" href="${GH("/commits/" + DATA.branch + "/vault/" + encPath(n.path))}" target="_blank" rel="noopener">History</a></div>` : "";
+    pane.innerHTML = `<h1>${esc(n.title)}</h1><div class="meta">${meta}</div>${edit}${md(n.body || "")}` +
+      (backs.length ? `<div class="backs">Linked with: ${backs.map(b => `<span class="wl" data-id="${esc(b.id)}">${esc(b.title)}</span>`).join(" · ")}</div>` : "");
+  }
+  pane.scrollTop = 0;
+  showPane("note");
+}
+document.addEventListener("click", e => {
+  const el = e.target.closest("[data-id]"); if (el && byId[el.dataset.id]) select(byId[el.dataset.id]);
+});
+
+function renderBranches(){
+  const el = document.getElementById("p-branches");
+  const statuses = ["done","in-progress","not-started","out-of-scope"];
+  let h = `<div class="keyrow">${statuses.map(s=>`<span><i style="background:${STATUS_COL[s]}"></i>${s}</span>`).join("")}<span><i style="background:#3a4250"></i>no status</span></div>`;
+  hubs.forEach(hb => {
+    const kids = leaves.filter(n => n.section === hb.section && visible(n));
+    const counts = {}; kids.forEach(k => { const s = STATUS_COL[k.status] ? k.status : "none"; counts[s] = (counts[s]||0)+1; });
+    const total = kids.length || 1;
+    h += `<div class="branch" data-id="${esc(hb.id)}"><div class="top"><i style="background:${S[hb.section].colour}"></i><b>${esc(S[hb.section].label)}</b><em>${kids.length}</em></div>
+      <div class="role">${esc(S[hb.section].role)}</div>
+      <div class="bar">${[...statuses,"none"].map(s => counts[s] ? `<span style="width:${counts[s]/total*100}%;background:${STATUS_COL[s]||"#3a4250"}"></span>` : "").join("")}</div></div>`;
+  });
+  el.innerHTML = h;
+}
+function renderRoadmap(){
+  const el = document.getElementById("p-roadmap");
+  const evs = DATA.events.filter(e => new Date(e.date) <= tCut);
+  if (!evs.length){ el.innerHTML = `<p class="empty">No events yet at this point in time.</p>`; return; }
+  let h = "", month = "";
+  evs.forEach(e => {
+    const d = new Date(e.date), m = d.toLocaleString("en-GB",{month:"long",year:"numeric"});
+    if (m !== month){ h += `<div class="month">${m}</div>`; month = m; }
+    h += `<div class="ev" style="--c:${EV_COL[e.kind]||"#888"}" data-id="${esc(e.node)}"><div class="d">${d.toLocaleString("en-GB",{day:"numeric",month:"short"})}</div>
+      <div><div class="k">${esc(e.kind)}</div><div class="t">${inline(e.text)}</div>${e.why?`<div class="w">${inline(e.why)}</div>`:""}</div></div>`;
+  });
+  el.innerHTML = h;
+}
+function renderLegend(){
+  const el = document.getElementById("legend");
+  el.innerHTML = Object.entries(S).map(([k,v]) => `<div class="chip${hidden.has(k)?" off":""}" data-s="${esc(k)}"><i style="background:${v.colour}"></i>${esc(v.label)}</div>`).join("");
+  el.querySelectorAll(".chip").forEach(c => c.onclick = e => { e.stopPropagation(); const s = c.dataset.s; hidden.has(s) ? hidden.delete(s) : hidden.add(s); alpha = 0.6; renderLegend(); renderBranches(); });
+}
+function renderStats(){
+  const vis = leaves.filter(visible);
+  const wiki = links.filter(l => l.kind==="wiki" && visible(l.s) && visible(l.t)).length;
+  const dec = DATA.events.filter(e => e.kind==="Decision" && new Date(e.date) <= tCut).length;
+  document.getElementById("stats").innerHTML =
+    [["Notes & files", vis.length],["Connections", wiki],["Decisions", dec],["Updated", DATA.built.slice(0,10)]]
+      .map(([k,v]) => `<div class="stat"><b>${v}</b><span>${k}</span></div>`).join("");
+}
+
+// ---------- time scrubber ----------
+const slider = document.getElementById("t"), when = document.getElementById("when"), play = document.getElementById("play");
+function setT(v){
+  tCut = new Date(d0.getTime() + v/100*span*864e5);
+  when.textContent = v >= 100 ? "Today · " + DATA.built.slice(0,10) : tCut.toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"});
+  alpha = Math.max(alpha, 0.5); renderStats(); renderBranches(); renderRoadmap();
+}
+slider.addEventListener("input", () => setT(+slider.value));
+document.getElementById("ticks").innerHTML = DATA.events.map(e => {
+  const p = (new Date(e.date)-d0)/864e5/span*100; if (p<0||p>100) return "";
+  return `<span title="${esc(e.kind+": "+e.text)}" style="left:${p}%;background:${EV_COL[e.kind]||"#888"}"></span>`;
+}).join("");
+let timer = null;
+play.onclick = () => {
+  if (timer){ clearInterval(timer); timer = null; play.textContent = "▶ Replay"; return; }
+  let v = 0; slider.value = 0; setT(0); play.textContent = "❚❚ Pause";
+  timer = setInterval(() => { v += 0.6; if (v >= 100){ v = 100; clearInterval(timer); timer = null; play.textContent = "▶ Replay"; } slider.value = v; setT(v); }, 40);
+};
+
+document.getElementById("contrib").href = GH("#readme");
+resize(); renderLegend(); setT(100); loop();
+</script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "installCommand": "echo 'no install needed'",
+  "buildCommand": "python3 scripts/build_brain.py",
+  "outputDirectory": "public"
+}
